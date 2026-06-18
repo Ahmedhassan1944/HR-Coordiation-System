@@ -163,20 +163,35 @@ function api_reviewDocument(documentId, action, remarks) {
     const sheet = getSheet_(SHEET_DOCUMENTS);
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
-    const docIdCol   = headers.indexOf('DocumentID');
-    const statusCol  = headers.indexOf('ApprovalStatus');
-    const remarkCol  = headers.indexOf('Remarks');
-    const reviewCol  = headers.indexOf('ReviewedAt');
+
+    const docIdCol    = headers.indexOf('DocumentID');
+    const statusCol   = headers.indexOf('ApprovalStatus');
+    const remarkCol   = headers.indexOf('Remarks');
+    const reviewCol   = headers.indexOf('ReviewedAt');   // Optional — may not exist in older sheets
     const approverCol = headers.indexOf('ApprovedBy');
-    const actor = Session.getActiveUser().getEmail();
+    const actor       = Session.getActiveUser().getEmail();
+
+    // Guard: validate required columns exist
+    if (docIdCol < 0 || statusCol < 0 || remarkCol < 0 || approverCol < 0) {
+      return { success: false, error: 'tbl_Documents is missing required columns. Check SheetSchema.md.' };
+    }
 
     for (let i = 1; i < data.length; i++) {
       if (data[i][docIdCol] === documentId) {
-        sheet.getRange(i + 1, statusCol + 1).setValue(action);
-        sheet.getRange(i + 1, remarkCol + 1).setValue(remarks || '');
-        sheet.getRange(i + 1, reviewCol + 1).setValue(new Date().toISOString());
+        sheet.getRange(i + 1, statusCol   + 1).setValue(action);
+        sheet.getRange(i + 1, remarkCol   + 1).setValue(remarks || '');
         sheet.getRange(i + 1, approverCol + 1).setValue(actor);
-        api_writeLog_(data[i][headers.indexOf('CandidateID')], actor, 'Document ' + action + ': ' + data[i][headers.indexOf('DocType')]);
+
+        // Only write ReviewedAt if the column exists (column K in the updated schema)
+        if (reviewCol >= 0) {
+          sheet.getRange(i + 1, reviewCol + 1).setValue(new Date().toISOString());
+        }
+
+        api_writeLog_(
+          data[i][headers.indexOf('CandidateID')],
+          actor,
+          'Document ' + action + ': ' + data[i][headers.indexOf('DocType')]
+        );
         return { success: true };
       }
     }

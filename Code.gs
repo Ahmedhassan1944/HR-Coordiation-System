@@ -33,40 +33,42 @@ function include(filename) {
  */
 function api_getDashboardData() {
   try {
-    // IN PRODUCTION:
-    // const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Candidates');
-    // const data = sheet.getDataRange().getValues();
-    // Proceed to filter data by HR Coordinator assignments...
+    const res = api_getAllCandidates();
+    if (!res.success) throw new Error(res.error);
+    
+    let activeCount = 0;
+    let missingDocs = 0;
+    let pendingValidation = 0;
+    let mobilized = 0;
+    
+    res.data.forEach(cand => {
+      const status = cand.CurrentStatus || '';
+      
+      if (status !== 'Closed') {
+        activeCount++;
+      }
+      
+      if (status === 'Documents Requested') {
+        missingDocs++;
+      } else if (status === 'Pending Validation') {
+        pendingValidation++;
+      } else if (status === 'Mobilized') {
+        mobilized++;
+      }
+    });
     
     return {
       success: true,
       data: {
-        activeCount: 24,
-        missingDocs: 12,
-        pendingValidation: 5,
+        activeCount: activeCount,
+        missingDocs: missingDocs,
+        pendingValidation: pendingValidation,
+        mobilized: mobilized,
         msg: "Live data successfully retrieved from Google Sheets."
       }
     };
   } catch(e) {
     Logger.log(e);
-    return { success: false, error: e.message };
-  }
-}
-
-/**
- * Handles binary document uploads from the frontend wizard.
- */
-function api_uploadDocumentToDrive(candidateId, docType, filename, base64Data) {
-  try {
-    // IN PRODUCTION:
-    // 1. Locate the candidate's Google Drive Folder based on Candidate ID.
-    // 2. Decode the incoming base64 payload into a file blob.
-    // 3. DriveApp.getFolderById(folderId).createFile(blob);
-    // 4. Update the "Documents" Google Sheet row with the new file URL.
-    
-    Logger.log("Received upload request for Candidate " + candidateId + " / Type: " + docType);
-    return { success: true, fileUrl: "https://drive.google.com/mock-link" };
-  } catch(e) {
     return { success: false, error: e.message };
   }
 }

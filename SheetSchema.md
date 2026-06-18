@@ -39,6 +39,7 @@
 | H        | ApprovedBy      | Email      | HR Coordinator email who reviewed                            |
 | I        | VersionNumber   | Number     | Integer. Starts at 1. Increments with every re-upload        |
 | J        | Remarks         | Text       | Rejection reason notes from Coordinator                      |
+| K        | ReviewedAt      | DateTime   | ISO timestamp of when the document was approved or rejected   |
 
 
 ## TAB 3: tbl_Users
